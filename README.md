@@ -3,7 +3,7 @@
 This project automates the process of creating a complete landing page from a simple topic input using AI and automation tools.
 Built with n8n, this workflow fetches trending blog topics, enhances them with AI, generates a landing page with visuals, and emails the result to the user.
 
-#🚀 Features
+## 🚀 Features
  - 📬 Form Submission Trigger – Starts when a user enters their email and selects an interest topic.
  - 🔍 SerpApi Integration – Fetches trending news or blog topics related to the user’s chosen interest.
  - 🧩 Google Gemini API – Expands headlines into a full blog (title, introduction, body, conclusion).
