@@ -31,6 +31,10 @@ YOUR_SERPAPI_KEY
 ```
 These keys were removed from this public version for security.
 
+## 🧩 Workflow Overview
+<img width="1619" height="614" alt="image" src="https://github.com/user-attachments/assets/8defcf9e-77b1-4261-9d74-9328ab334b15" />
+
+
 ## 📬 Contact
 - **Email:** [franciscoanthony82@gmail.com](mailto:franciscoanthony82@gmail.com)
 - **GitHub:** [AnthonyFrancisco21](https://github.com/AnthonyFrancisco21)
