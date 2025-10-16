@@ -34,6 +34,13 @@ These keys were removed from this public version for security.
 ## 🧩 Workflow Overview
 <img width="1619" height="614" alt="image" src="https://github.com/user-attachments/assets/8defcf9e-77b1-4261-9d74-9328ab334b15" />
 
+## 💻 Generated HTML Output  
+Preview of the AI-generated landing page built using HTML, CSS, and JavaScript.
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/7fa8d28f-6b46-4070-bea0-2d53f3b805b6" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/61b3e15c-f76f-45b5-ad81-56b822682821" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/75771c9d-8e18-4d16-93a0-8879ad2f2a62" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/bdfd2c0b-77fe-42a0-9c49-03ae25300949" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/c2075d81-22de-4734-84b7-3555e6b7fcce" />
 
 ## 📬 Contact
 - **Email:** [franciscoanthony82@gmail.com](mailto:franciscoanthony82@gmail.com)
