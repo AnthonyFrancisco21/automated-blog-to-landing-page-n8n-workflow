@@ -25,9 +25,12 @@ Built with n8n, this workflow fetches trending blog topics, enhances them with A
 
 ⚠️ Before using this workflow:
 Replace the placeholder API keys with your own credentials inside n8n:
-'''
+```
 YOUR_HUGGINGFACE_API_KEY
 YOUR_SERPAPI_KEY
-'''
+```
 These keys were removed from this public version for security.
 
+## 📬 Contact
+- **Email:** [franciscoanthony82@gmail.com](mailto:franciscoanthony82@gmail.com)
+- **GitHub:** [AnthonyFrancisco21](https://github.com/AnthonyFrancisco21)
