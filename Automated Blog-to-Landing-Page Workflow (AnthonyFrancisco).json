@@ -1,0 +1,516 @@
+{
+  "name": "Automated Blog-to-Landing-Page Workflow (AnthonyFrancisco)",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <YOUR_HUGGING_FACE_API>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "image/png"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"inputs\": \"Generate a clean, realistic image that visually represents the blog topic:{{ $('On form submission').item.json['Interest topics'] }} . Do not include any text, words, letters, slogans, or watermarks in the image.\"\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -240
+      ],
+      "id": "c7a8835f-bc0f-46db-b8c9-39105d2502fb",
+      "name": "Image Generator"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.content.parts[0].text\n\n// Remove ```json and ``` if they exist\nconst clean = raw.replace(/```json\\n?/, \"\").replace(/```$/, \"\");\n\n// Parse the JSON string\nconst parsed = JSON.parse(clean);\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -336
+      ],
+      "id": "a2848604-9f1b-4bd9-9f98-fbe7e4e74d70",
+      "name": "Clean the response from gemini into json"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_news"
+            },
+            {
+              "name": "q",
+              "value": "= Latest trending blog topic about {{ $json['Interest topics'] }}"
+            },
+            {
+              "name": "num",
+              "value": "5"
+            },
+            {
+              "name": "api_key",
+              "value": "<YOUR_SERPAPI_API>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -64,
+        -336
+      ],
+      "id": "cb20662c-cda3-4e8e-b6c8-002c9e7a3c9d",
+      "name": "serpapi request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const raw = item.json.html \n           || (item.json.content && item.json.content.parts && item.json.content.parts[0] && item.json.content.parts[0].text)\n           || \"\";\n\n  let clean = raw.replace(/^```(?:html)?\\s*/i, \"\").replace(/```\\s*$/i, \"\");\n\n  if (clean.includes(\"\\\\n\") || clean.includes(\"\\\\t\") || clean.includes(\"\\\\r\")) {\n    clean = clean\n      .replace(/\\\\r\\\\n/g, \"\\r\\n\")\n      .replace(/\\\\n/g, \"\\n\")\n      .replace(/\\\\t/g, \"\\t\")\n      .replace(/\\\\\"/g, '\"')\n      .replace(/\\\\'/g, \"'\")\n      .replace(/\\\\\\\\/g, \"\\\\\");\n  }\n\n  clean = clean.trim();\n\n  return {\n    binary: {\n      data: {\n        data: Buffer.from(clean, \"utf8\"),\n        fileName: \"home.html\",\n        mimeType: \"text/html\"\n      }\n    },\n    json: {\n      length: clean.length,\n      hasLiteralBackslashN: raw.includes(\"\\\\n\")\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -432
+      ],
+      "id": "51cb2f4e-edfa-4659-9198-a8c9f25591f2",
+      "name": "clean html"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Create a modern single-page landing-page blog website (HTML, CSS, JS) with the following content:\n\nTitle: {{ $('Clean the response from gemini into json').item.json.title }}\nIntroduction: {{ $('Clean the response from gemini into json').item.json.introduction }}\nBody: {{ $('Clean the response from gemini into json').item.json.body }}\nConclusion: {{ $('Clean the response from gemini into json').item.json.conclusion }}\n\nUse a single HTML file with embedded CSS and JavaScript. Make it mobile-friendly and modern style Single-Page Blog and add animation if possible.\n\nSend only the code and set the website title as \"News blog Website\" or the Title of the article\n\nFor the image, leave a <img src='blog-img.png' alt='Blog Image'> on the content and I will put the actual image with the same inventory."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -432
+      ],
+      "id": "353ffdb9-f0d1-40f2-9e09-7c9a2ff134bf",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "K0AHSK2Em51rgTaX",
+          "name": "Gemini API (placeholder)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = items[0];\n\n// Rename the property from 'data' to 'blog-img'\nitem.binary = {\n  'blog-img': item.binary.data  // this will be the Gmail attachment property\n};\n\nitem.binary['blog-img'].fileName = 'blog-img.png';\n\nreturn [item];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -240
+      ],
+      "id": "facd4d4e-d31f-4eb6-a02f-0628d336020d",
+      "name": "Change img filename with .png"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').first().json.Email }}\n",
+        "subject": "=Your AI-Generated Landing Page",
+        "emailType": "text",
+        "message": "=Here’s the landing page for the latest blog about the topic \"{{ $('On form submission').first().json['Interest topics'] }}\".\n\nTo view it:\n\n1. Download the attached .html file and .png images into the same folder.\n\n2. Open the .html file using any browser.\n\nEnjoy your new AI-generated landing page! 🚀",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "={{ Object.keys($binary).join(',') }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1760,
+        -336
+      ],
+      "id": "b2d93f12-a998-41d5-a513-f29dcacebdcc",
+      "name": "Send a message",
+      "webhookId": "a4c1b2eb-65da-46e5-8144-46310378bbc1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SOnvfEUyDENoMU2L",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Automated Blog-to-Landing Page Generator",
+        "formDescription": "Enter your email and topic of interest. Our AI will create a landing page with content and visuals, then send it to your inbox.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "Enter your email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Interest topics",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Technology & AI"
+                  },
+                  {
+                    "option": "Business & Startups"
+                  },
+                  {
+                    "option": "Health & Wellness"
+                  },
+                  {
+                    "option": "Travel & Lifestyle"
+                  },
+                  {
+                    "option": "Food & Recipes"
+                  },
+                  {
+                    "option": "Education & Career Growth"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -288,
+        -336
+      ],
+      "id": "4a6a2565-b527-4082-9a7e-89d7d57aa671",
+      "name": "On form submission",
+      "webhookId": "c79b26ec-eadc-40f7-97f8-003f88a01b83"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1312,
+        -336
+      ],
+      "id": "b80225c9-2b5a-4948-97b1-58d5f794a6c1",
+      "name": "Merge html and png file"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node receives two items: items[0] (HTML) and items[1] (PNG)\nconst items = $input.all();\n\nif (items.length !== 2) {\n    throw new Error(\"ERROR: The merge node must feed exactly two items into this code node.\");\n}\n\nconst htmlItem = items[0];\nconst pngItem = items[1];\n\n\n// Create the single output item\nconst combinedItem = {\n    // Take the JSON data from the HTML item (or whichever one you prefer)\n    json: htmlItem.json, \n    \n    // Manually merge the binary structures into one object\n    binary: {\n        'data': htmlItem.binary.data, \n        'blog-img': pngItem.binary['blog-img'] \n    }\n};\n\n\nreturn [combinedItem];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -336
+      ],
+      "id": "7036c5d8-d5f2-43bc-a421-cdc2296f8b34",
+      "name": "Create single output for attachments"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are given the following headlines and blogs about the {{ $('On form submission').item.json['Interest topics'] }}:\n\n{{ $json.news_results.map(r => r.title).join(\"\\n\") }}\n\nTask:\n1. Identify the most common or trending topic and choose only one headline.\n2. Expand the details and explain them more in a blog post with the following exact fields:\n   - title\n   - introduction\n   - body\n   - conclusion\n\nImportant:\n- Output must ONLY be in JSON format with the keys: title, introduction, body, and conclusion.\n- Do not add explanations, Markdown, or human-like notes.\n- Do not include Markdown formatting such as triple backticks. Output only raw JSON.\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -336
+      ],
+      "id": "69f56ea1-94eb-4bfa-ab1d-ebebd59d9aea",
+      "name": "Extract and Enhance the blog content",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "K0AHSK2Em51rgTaX",
+          "name": "Gemini API (placeholder)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Workflow Documentation: Automated Blog-to-Landing-Page Generator\n### Overview\n\nThis workflow automates the process of generating a blog-based landing page from a user’s interest topic. It fetches trending articles, enhances them with AI, creates HTML + image content, and emails the results to the user.",
+        "height": 208,
+        "width": 736
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -304,
+        -880
+      ],
+      "typeVersion": 1,
+      "id": "6d8ab723-d032-46b8-bac6-08501eae32c3",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Workflow steps\n\n ### Form Submission (Trigger)\n  - The workflow starts when a user submits their email and interest topic.\n\n ### HTTP Request (SerpApi)\n  - Uses SerpApi to search trending articles/blogs related to the user’s chosen topic.\nExample: searching “Technology AI” returns top Google News results.\n\n ### Gemini API (Extract & Enhance)\n  - AI selects one article and expands it into structured blog content:\ntitle, introduction, body, conclusion.",
+        "height": 496,
+        "width": 736,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -304,
+        -656
+      ],
+      "typeVersion": 1,
+      "id": "376c67dd-1800-4ff5-ba5c-a1d49c23ce3d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### Gemini API (Generate HTML)\n  - Uses the structured JSON to create a modern single-page HTML blog layout.\n\n### Function Node (Clean HTML)\n  - Cleans and validates the HTML response, saving it with .html extension.",
+        "height": 304,
+        "width": 576,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        672,
+        -608
+      ],
+      "typeVersion": 1,
+      "id": "2ce13a41-d5c7-478d-91b0-647eeb88207f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n### HTTP Request (Hugging Face - Image Generator)\n  - Generates a relevant blog image based on the chosen topic.\n\n### Function Node (Rename Image File)\n  - Cleans the image response and renames it with .png extension.### \n",
+        "height": 352,
+        "width": 576,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        672,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "28cb56a1-b73a-4421-82a0-1ec3596d2853",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "### Merge Node (HTML + Image)\n  - Combines the cleaned HTML and PNG into a single workflow branch.\n\n### Function Node (Prepare Attachments)\n  - Packages the .html and .png files into one output so they can be sent together.\n\n### Gmail Node (Send Email)\n  - Sends an email to the submitted user address with the blog HTML and image PNG attached.",
+        "height": 448,
+        "width": 576,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1296,
+        -608
+      ],
+      "typeVersion": 1,
+      "id": "08de1720-c06e-4874-b5bb-bc29bfec50cb",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Final Output\n  - A mobile-friendly blog landing page (.html) file.\n\n  - A generated blog image (.png) file.\n\n  - Both are sent as attachments to the user’s email.",
+        "height": 208,
+        "width": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1952,
+        -368
+      ],
+      "typeVersion": 1,
+      "id": "0ef907c4-5447-4ffa-b884-5bed56d1c57f",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Image Generator": {
+      "main": [
+        [
+          {
+            "node": "Change img filename with .png",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean the response from gemini into json": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Image Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "serpapi request": {
+      "main": [
+        [
+          {
+            "node": "Extract and Enhance the blog content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "clean html": {
+      "main": [
+        [
+          {
+            "node": "Merge html and png file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "clean html",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Change img filename with .png": {
+      "main": [
+        [
+          {
+            "node": "Merge html and png file",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "serpapi request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge html and png file": {
+      "main": [
+        [
+          {
+            "node": "Create single output for attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create single output for attachments": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract and Enhance the blog content": {
+      "main": [
+        [
+          {
+            "node": "Clean the response from gemini into json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6c24ccc8-80ac-48ed-8284-82b6b9b0f7ed",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea67e06b8d59c0418839ca2ae0e4d435ffe83b2446d99ede95ccf3f8b9130e47"
+  },
+  "id": "plZznHeb8Ad3CAaF",
+  "tags": []
+}
