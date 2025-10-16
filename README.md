@@ -1,4 +1,4 @@
-## Automated Blog-to-Landing Page Workflow (n8n)
+# Automated Blog-to-Landing Page Workflow (n8n)
 
 This project automates the process of creating a complete landing page from a simple topic input using AI and automation tools.
 Built with n8n, this workflow fetches trending blog topics, enhances them with AI, generates a landing page with visuals, and emails the result to the user.
@@ -12,7 +12,7 @@ Built with n8n, this workflow fetches trending blog topics, enhances them with A
  - 📎 Gmail Node – Sends the final HTML and PNG files to the user’s email.
 
 
-#⚙️ Workflow Overview
+## ⚙️ Workflow Overview
 
  - Form Trigger: User submits email + topic.
  - SerpApi: Fetches trending blog headlines.
@@ -21,7 +21,7 @@ Built with n8n, this workflow fetches trending blog topics, enhances them with A
  - Hugging Face API: Creates a visual image for the blog.
  - Merge + Email: Combines image + HTML and sends them as attachments via Gmail.
 
-# 🔐 API Keys (Important)
+## 🔐 API Keys (Important)
 
 ⚠️ Before using this workflow:
 Replace the placeholder API keys with your own credentials inside n8n:
